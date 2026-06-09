@@ -21,7 +21,7 @@ agents = [
         "id": "ambulance_1",
         "type": "ambulance",
         "current_location": "hospital1",
-        "status": "rerouting",
+        "status": "active",
         "mission": "emergency response",
         "capacity": 4  # patients
     },

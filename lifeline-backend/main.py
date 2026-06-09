@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from agents import get_agents
-from state import get_state
+from agents import get_agents, update_agent_status
+from state import get_state, activate_disaster, add_blocked_road, add_event
 
 app = FastAPI()
 
@@ -36,3 +36,35 @@ def get_all_agents() -> list[dict]:
 def get_system_state() -> dict:
     """Returns the current system state."""
     return get_state()
+
+
+@app.post("/disaster/trigger")
+def trigger_disaster() -> dict:
+    """
+    Triggers disaster response mode.
+    Activates disaster, blocks roads, updates agent statuses, and logs events.
+    """
+    # Activate disaster mode
+    activate_disaster()
+    
+    # Block affected roads
+    add_blocked_road("warehouse1-depot1")
+    add_blocked_road("hospital1-depot2")
+    
+    # Log the disaster event
+    add_event("Flood detected in Sector Alpha")
+    
+    # Update agent statuses
+    # Change vehicles and supply trucks to rerouting status
+    for agent in get_agents():
+        if agent["type"] in ["vehicle", "supply_truck"]:
+            update_agent_status(agent["id"], "rerouting")
+    
+    # Return current state
+    state = get_state()
+    return {
+        "disaster_active": state["disaster_active"],
+        "blocked_roads": state["blocked_roads"],
+        "agents": get_agents(),
+        "event_log": state["event_log"]
+    }
