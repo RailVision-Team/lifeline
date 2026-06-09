@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from agents import get_agents, update_agent_status
 from state import get_state, activate_disaster, add_blocked_road, add_event
+from graph import get_graph
 
 app = FastAPI()
 
@@ -66,5 +67,36 @@ def trigger_disaster() -> dict:
         "disaster_active": state["disaster_active"],
         "blocked_roads": state["blocked_roads"],
         "agents": get_agents(),
+        "event_log": state["event_log"]
+    }
+
+
+@app.get("/simulation/status")
+def get_simulation_status() -> dict:
+    """
+    Returns the complete simulation status.
+    Includes graph topology, agents, and disaster state.
+    """
+    # Get the network graph
+    graph = get_graph()
+    
+    # Extract nodes and edges from graph
+    graph_nodes = list(graph.nodes())
+    graph_edges = list(graph.edges(data=True))
+    
+    # Get current state
+    state = get_state()
+    
+    # Return complete simulation status
+    return {
+        "graph": {
+            "nodes": graph_nodes,
+            "edges": graph_edges
+        },
+        "agents": get_agents(),
+        "disaster": {
+            "active": state["disaster_active"],
+            "blocked_roads": state["blocked_roads"]
+        },
         "event_log": state["event_log"]
     }
