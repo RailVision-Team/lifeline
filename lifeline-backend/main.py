@@ -13,3 +13,12 @@ app.add_middleware(
 @app.get("/")
 def root():
     return {"status": "lifeline backend running"}
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {
+        "status": "healthy",
+        "service": "lifeline-backend",
+        "version": "1.0"
+    }
