@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0a0c0f;
+  --bg-secondary: #0f1318;
+  --bg-panel: #111620;
+  --bg-panel-border: #1e2530;
+  --accent-amber: #f59e0b;
+  --accent-green: #22c55e;
+  --accent-red: #ef4444;
+  --accent-blue: #3b82f6;
+  --accent-orange: #f97316;
+  --accent-purple: #a855f7;
+  --text-primary: #e2e8f0;
+  --text-secondary: #64748b;
+  --text-dim: #334155;
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-ui: 'Barlow', sans-serif;
+  --font-condensed: 'Barlow Condensed', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Subtle scanline texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--bg-panel-border);
+}
+
+.panel-header {
+  font-family: var(--font-condensed);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--bg-panel-border);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mono { font-family: var(--font-mono); }
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.active { background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green); }
+.status-dot.rerouting { background: var(--accent-amber); box-shadow: 0 0 6px var(--accent-amber); }
+.status-dot.blocked { background: var(--accent-red); box-shadow: 0 0 6px var(--accent-red); }
+.status-dot.idle { background: var(--text-dim); }
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.pulse { animation: pulse-glow 2s ease-in-out infinite; }
