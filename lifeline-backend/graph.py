@@ -18,6 +18,7 @@ def get_graph() -> nx.Graph:
     
     # Add weighted edges (roads) connecting locations
     # Format: (source, destination, weight_in_km)
+    # Multiple paths between locations enable rerouting when roads are blocked
     roads = [
         ("command_center", "camp1", 5),
         ("command_center", "camp2", 8),
@@ -29,8 +30,10 @@ def get_graph() -> nx.Graph:
         ("camp2", "depot2", 9),
         ("warehouse1", "hospital1", 2),
         ("warehouse2", "hospital1", 4),
-        ("depot1", "camp1", 7),
-        ("depot2", "camp2", 9),
+        ("depot1", "warehouse1", 4),
+        ("depot1", "hospital1", 5),
+        ("depot2", "warehouse2", 3),
+        ("depot2", "hospital1", 6),
         ("warehouse1", "warehouse2", 10),
     ]
     graph.add_weighted_edges_from(roads)
