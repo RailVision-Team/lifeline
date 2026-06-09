@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from agents import get_agents
+from state import get_state
 
 app = FastAPI()
 
@@ -22,3 +24,15 @@ def health() -> dict[str, str]:
         "service": "lifeline-backend",
         "version": "1.0"
     }
+
+
+@app.get("/agents")
+def get_all_agents() -> list[dict]:
+    """Returns all disaster response agents."""
+    return get_agents()
+
+
+@app.get("/state")
+def get_system_state() -> dict:
+    """Returns the current system state."""
+    return get_state()
