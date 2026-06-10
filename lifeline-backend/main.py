@@ -1,9 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from agents import get_agents, update_agent_status
-from state import get_state, activate_disaster, add_blocked_road, add_event
+from state import get_state, activate_disaster, add_blocked_road, add_event, clear_state
 from graph import get_graph
 from route_engine import calculate_routes
+from allocation_engine import calculate_priorities
 
 app = FastAPI()
 
@@ -41,10 +42,14 @@ def get_system_state() -> dict:
 
 
 @app.post("/disaster/trigger")
-def trigger_disaster() -> dict:
+def trigger_disaster(disaster_type: str = "flood") -> dict:
     """
-    Triggers disaster response mode.
-    Activates disaster, blocks roads, calculates alternate routes, 
+    Triggers disaster response mode with a specific disaster type.
+    
+    Args:
+        disaster_type: Type of disaster - "flood", "bridge_collapse", or "supply_chain_disruption"
+    
+    Activates disaster, blocks roads based on type, calculates alternate routes, 
     updates agent statuses, and logs events.
     """
     # Check if a disaster is already active
@@ -56,22 +61,44 @@ def trigger_disaster() -> dict:
             "disaster_active": True
         }
     
+    # Define roads blocked for each disaster type
+    # Each disaster has different impact on the road network
+    disaster_roads = {
+        "flood": {
+            "roads": ["warehouse1-depot1", "hospital1-depot2"],
+            "tuples": [("warehouse1", "depot1"), ("hospital1", "depot2")],
+            "event": "Flood detected in Sector Alpha"
+        },
+        "bridge_collapse": {
+            "roads": ["camp1-command_center", "warehouse1-command_center"],
+            "tuples": [("camp1", "command_center"), ("warehouse1", "command_center")],
+            "event": "Bridge collapse reported near Command Center"
+        },
+        "supply_chain_disruption": {
+            "roads": ["warehouse1-warehouse2", "warehouse2-hospital1"],
+            "tuples": [("warehouse1", "warehouse2"), ("warehouse2", "hospital1")],
+            "event": "Supply chain disruption detected - warehouse network affected"
+        }
+    }
+    
+    # Get disaster configuration, default to flood if invalid type provided
+    if disaster_type not in disaster_roads:
+        disaster_type = "flood"
+    
+    disaster_config = disaster_roads[disaster_type]
+    
     # Activate disaster mode
     activate_disaster()
     
-    # Block affected roads
-    add_blocked_road("warehouse1-depot1")
-    add_blocked_road("hospital1-depot2")
+    # Block affected roads based on disaster type
+    for road in disaster_config["roads"]:
+        add_blocked_road(road)
     
-    # Get the list of blocked roads for route calculation
-    # Convert blocked roads from "location1-location2" format to tuples
-    blocked_roads_list = [
-        ("warehouse1", "depot1"),
-        ("hospital1", "depot2")
-    ]
+    # Get the list of blocked roads as tuples for route calculation
+    blocked_roads_list = disaster_config["tuples"]
     
     # Log the disaster event
-    add_event("Flood detected in Sector Alpha")
+    add_event(disaster_config["event"])
     
     # Calculate alternative routes avoiding blocked roads
     routes = calculate_routes(blocked_roads_list)
@@ -99,10 +126,11 @@ def trigger_disaster() -> dict:
         if agent["type"] in ["vehicle", "supply_truck"]:
             update_agent_status(agent["id"], "rerouting")
     
-    # Return current state with routes included
+    # Return current state with routes and disaster type included
     state = get_state()
     return {
         "disaster_active": state["disaster_active"],
+        "disaster_type": disaster_type,
         "blocked_roads": state["blocked_roads"],
         "agents": get_agents(),
         "routes": routes,
@@ -110,11 +138,30 @@ def trigger_disaster() -> dict:
     }
 
 
+@app.post("/simulation/reset")
+def reset_simulation() -> dict:
+    """
+    Resets the entire simulation to its initial state.
+    Clears disaster mode, blocked roads, events, and resets all agents to active.
+    """
+    # Reset all state variables (disaster_active, blocked_roads, event_log)
+    clear_state()
+    
+    # Reset all agents back to status="active"
+    for agent in get_agents():
+        update_agent_status(agent["id"], "active")
+    
+    # Return success message
+    return {
+        "message": "Simulation reset successfully"
+    }
+
+
 @app.get("/simulation/status")
 def get_simulation_status() -> dict:
     """
     Returns the complete simulation status.
-    Includes graph topology, agents, and disaster state.
+    Includes graph topology, agents, disaster state, and resource priorities.
     """
     # Get the network graph
     graph = get_graph()
@@ -125,6 +172,9 @@ def get_simulation_status() -> dict:
     
     # Get current state
     state = get_state()
+    
+    # Calculate resource allocation priorities for camps
+    priorities = calculate_priorities()
     
     # Return complete simulation status
     return {
@@ -137,5 +187,6 @@ def get_simulation_status() -> dict:
             "active": state["disaster_active"],
             "blocked_roads": state["blocked_roads"]
         },
-        "event_log": state["event_log"]
+        "event_log": state["event_log"],
+        "priorities": priorities
     }
