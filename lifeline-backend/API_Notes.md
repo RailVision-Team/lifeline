@@ -27,3 +27,20 @@ Response:
 - routes
 - priorities
 - updated state
+
+Backend Complete (Jun 10)
+
+Endpoints:
+- /health
+- /agents
+- /state
+- /simulation/status
+- /disaster/trigger
+
+Features:
+- Graph engine
+- Route engine
+- Priority allocation
+- Disaster state management
+- Event logging
+- Metrics generation

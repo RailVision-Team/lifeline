@@ -97,28 +97,35 @@ def trigger_disaster(disaster_type: str = "flood") -> dict:
     # Get the list of blocked roads as tuples for route calculation
     blocked_roads_list = disaster_config["tuples"]
     
-    # Log the disaster event
-    add_event(disaster_config["event"])
+    # Log the disaster event from dispatch center
+    add_event(f"DISPATCH: {disaster_config['event']}")
     
     # Calculate alternative routes avoiding blocked roads
     routes = calculate_routes(blocked_roads_list)
     
-    # Add event log messages describing route decisions
-    # Check each route and add appropriate messages
+    # Add agent-style event log messages describing route decisions
+    # Each agent reports their status and actions
+    
+    # Food delivery vehicle reports
     if routes["food_route"] != "NO_ROUTE":
-        add_event(f"Food delivery rerouted through {routes['food_route'][1]}")
+        intermediate_stop = routes["food_route"][1]
+        add_event(f"AGENT-V1: Primary food delivery route blocked. Alternate route selected via {intermediate_stop}.")
     else:
-        add_event("⚠️ Food delivery route unavailable - all roads blocked")
+        add_event("⚠️ AGENT-V1: All food delivery routes unavailable - network isolated")
     
+    # Medicine convoy vehicle reports
     if routes["medicine_route"] != "NO_ROUTE":
-        add_event(f"Medicine convoy selected alternate path via {routes['medicine_route'][1]}")
+        intermediate_stop = routes["medicine_route"][1]
+        add_event(f"AGENT-V2: Medicine convoy rerouted through {intermediate_stop} after road closure.")
     else:
-        add_event("⚠️ Medicine convoy route unavailable - all roads blocked")
+        add_event("⚠️ AGENT-V2: All medicine delivery routes unavailable - network isolated")
     
+    # Ambulance reports with ETA
     if routes["emergency_route"] != "NO_ROUTE":
-        add_event(f"Emergency vehicle assigned shortest available route via {routes['emergency_route'][1]}")
+        intermediate_stop = routes["emergency_route"][1]
+        add_event(f"AMB-1: Emergency response route recalculated. New path via {intermediate_stop}. Proceeding to destination.")
     else:
-        add_event("⚠️ Emergency vehicle route unavailable - all roads blocked")
+        add_event("⚠️ AMB-1: Emergency response blocked - all routes unavailable. Awaiting network recovery.")
     
     # Update agent statuses
     # Change vehicles and supply trucks to rerouting status
@@ -161,7 +168,7 @@ def reset_simulation() -> dict:
 def get_simulation_status() -> dict:
     """
     Returns the complete simulation status.
-    Includes graph topology, agents, disaster state, and resource priorities.
+    Includes graph topology, agents, disaster state, resource priorities, and metrics.
     """
     # Get the network graph
     graph = get_graph()
@@ -173,8 +180,31 @@ def get_simulation_status() -> dict:
     # Get current state
     state = get_state()
     
+    # Get all agents for metrics calculation
+    all_agents = get_agents()
+    
     # Calculate resource allocation priorities for camps
     priorities = calculate_priorities()
+    
+    # Calculate metrics
+    # Count total agents
+    total_agents = len(all_agents)
+    
+    # Count agents by status
+    active_agents = sum(1 for agent in all_agents if agent["status"] == "active")
+    rerouting_agents = sum(1 for agent in all_agents if agent["status"] == "rerouting")
+    
+    # Count blocked roads
+    blocked_roads_count = len(state["blocked_roads"])
+    
+    # Build metrics dictionary
+    metrics = {
+        "total_agents": total_agents,
+        "active_agents": active_agents,
+        "rerouting_agents": rerouting_agents,
+        "blocked_roads": blocked_roads_count,
+        "disaster_active": state["disaster_active"]
+    }
     
     # Return complete simulation status
     return {
@@ -182,11 +212,12 @@ def get_simulation_status() -> dict:
             "nodes": graph_nodes,
             "edges": graph_edges
         },
-        "agents": get_agents(),
+        "agents": all_agents,
         "disaster": {
             "active": state["disaster_active"],
             "blocked_roads": state["blocked_roads"]
         },
         "event_log": state["event_log"],
-        "priorities": priorities
+        "priorities": priorities,
+        "metrics": metrics
     }
