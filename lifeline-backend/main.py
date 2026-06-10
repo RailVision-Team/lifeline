@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from agents import get_agents, update_agent_status
 from state import get_state, activate_disaster, add_blocked_road, add_event
 from graph import get_graph
+from route_engine import calculate_routes
 
 app = FastAPI()
 
@@ -43,8 +44,18 @@ def get_system_state() -> dict:
 def trigger_disaster() -> dict:
     """
     Triggers disaster response mode.
-    Activates disaster, blocks roads, updates agent statuses, and logs events.
+    Activates disaster, blocks roads, calculates alternate routes, 
+    updates agent statuses, and logs events.
     """
+    # Check if a disaster is already active
+    state = get_state()
+    if state["disaster_active"]:
+        # Disaster already active - return early without running logic again
+        return {
+            "message": "Disaster already active",
+            "disaster_active": True
+        }
+    
     # Activate disaster mode
     activate_disaster()
     
@@ -52,8 +63,35 @@ def trigger_disaster() -> dict:
     add_blocked_road("warehouse1-depot1")
     add_blocked_road("hospital1-depot2")
     
+    # Get the list of blocked roads for route calculation
+    # Convert blocked roads from "location1-location2" format to tuples
+    blocked_roads_list = [
+        ("warehouse1", "depot1"),
+        ("hospital1", "depot2")
+    ]
+    
     # Log the disaster event
     add_event("Flood detected in Sector Alpha")
+    
+    # Calculate alternative routes avoiding blocked roads
+    routes = calculate_routes(blocked_roads_list)
+    
+    # Add event log messages describing route decisions
+    # Check each route and add appropriate messages
+    if routes["food_route"] != "NO_ROUTE":
+        add_event(f"Food delivery rerouted through {routes['food_route'][1]}")
+    else:
+        add_event("⚠️ Food delivery route unavailable - all roads blocked")
+    
+    if routes["medicine_route"] != "NO_ROUTE":
+        add_event(f"Medicine convoy selected alternate path via {routes['medicine_route'][1]}")
+    else:
+        add_event("⚠️ Medicine convoy route unavailable - all roads blocked")
+    
+    if routes["emergency_route"] != "NO_ROUTE":
+        add_event(f"Emergency vehicle assigned shortest available route via {routes['emergency_route'][1]}")
+    else:
+        add_event("⚠️ Emergency vehicle route unavailable - all roads blocked")
     
     # Update agent statuses
     # Change vehicles and supply trucks to rerouting status
@@ -61,12 +99,13 @@ def trigger_disaster() -> dict:
         if agent["type"] in ["vehicle", "supply_truck"]:
             update_agent_status(agent["id"], "rerouting")
     
-    # Return current state
+    # Return current state with routes included
     state = get_state()
     return {
         "disaster_active": state["disaster_active"],
         "blocked_roads": state["blocked_roads"],
         "agents": get_agents(),
+        "routes": routes,
         "event_log": state["event_log"]
     }
 
