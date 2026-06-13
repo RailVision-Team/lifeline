@@ -6,6 +6,7 @@ from graph import get_graph
 from route_engine import calculate_routes
 from allocation_engine import calculate_priorities
 from decision_engine import generate_agent_decisions
+from metrics_engine import calculate_metrics
 
 app = FastAPI()
 
@@ -144,6 +145,11 @@ def trigger_disaster(disaster_type: str = "flood") -> dict:
     
     # Return current state with routes and disaster type included
     state = get_state()
+    metrics = calculate_metrics(
+        get_state(),
+        routes,
+        decisions
+    )
     return {
         "disaster_active": state["disaster_active"],
         "disaster_type": disaster_type,
@@ -151,6 +157,7 @@ def trigger_disaster(disaster_type: str = "flood") -> dict:
         "agents": get_agents(),
         "routes": routes,
         "decisions": decisions,
+        "metrics": metrics,
         "event_log": state["event_log"]
     }
 
@@ -230,4 +237,14 @@ def get_simulation_status() -> dict:
         "event_log": state["event_log"],
         "priorities": priorities,
         "metrics": metrics
+    }
+
+@app.post("/hardware/alert")
+def hardware_alert(message: str = "FLOOD WARNING"):
+
+    add_event(f"[HARDWARE] Speaker Alert Broadcasted: {message}")
+
+    return {
+        "status": "alert_sent",
+        "message": message
     }
