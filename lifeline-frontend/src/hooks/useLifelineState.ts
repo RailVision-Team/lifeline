@@ -53,6 +53,11 @@ export function useLifelineState(intervalMs = 3000) {
 
 // Local simulation when backend isn't ready
 function simulateDisaster(type: string, setState: React.Dispatch<React.SetStateAction<LifelineState>>) {
+  if (type === 'reset') {
+    setState(mockState);
+    return;
+  }
+
   setState(prev => {
     const newEvent = {
       id: Date.now().toString(),
@@ -71,14 +76,17 @@ function simulateDisaster(type: string, setState: React.Dispatch<React.SetStateA
       return e;
     });
 
+    const blockedCount = updatedEdges.filter(e => e.status === 'blocked').length;
+    const activeCount = updatedEdges.filter(e => e.status === 'active').length;
+
     return {
       ...prev,
       edges: updatedEdges,
       events: [newEvent, ...prev.events].slice(0, 50),
       metrics: {
         ...prev.metrics,
-        blockedRoutes: prev.metrics.blockedRoutes + 1,
-        activeRoutes: Math.max(0, prev.metrics.activeRoutes - 1),
+        blockedRoutes: blockedCount,
+        activeRoutes: activeCount,
       },
     };
   });

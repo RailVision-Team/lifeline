@@ -127,20 +127,29 @@ export default function Dashboard() {
 
         {/* RIGHT */}
         <aside style={{
-          borderLeft: '1px solid var(--bg-panel-border)',
-          display: 'flex', flexDirection: 'column',
-          overflow: 'hidden', background: 'rgba(17,24,39,0.95)',
-        }}>
-          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', borderBottom: '1px solid var(--bg-panel-border)' }}>
-            <EventLog events={state.events} />
-          </div>
-          <div style={{ flexShrink: 0, borderBottom: '1px solid var(--bg-panel-border)' }}>
-            <HardwareStatus connected={state.hardwareConnected} />
-          </div>
-          <div style={{ flexShrink: 0 }}>
-            <CrisisControls onTrigger={triggerDisaster} loading={loading} />
-          </div>
-        </aside>
+  borderLeft: '1px solid var(--bg-panel-border)',
+  display: 'flex', flexDirection: 'column',
+  overflow: 'hidden', background: 'rgba(17,24,39,0.95)',
+}}>
+  {/* Event log — takes all remaining space */}
+  <div style={{
+    flex: 1, minHeight: 0, overflow: 'hidden',
+    display: 'flex', flexDirection: 'column',
+    borderBottom: '1px solid var(--bg-panel-border)',
+  }}>
+    <EventLog events={state.events} />
+  </div>
+
+  {/* Hardware — fixed height, never grows */}
+  <div style={{ height: '160px', flexShrink: 0, borderBottom: '1px solid var(--bg-panel-border)', overflow: 'hidden' }}>
+    <HardwareStatus connected={state.hardwareConnected} />
+  </div>
+
+  {/* Crisis controls — fixed height */}
+  <div style={{ height: '200px', flexShrink: 0, overflow: 'hidden' }}>
+    <CrisisControls onTrigger={triggerDisaster} loading={loading} />
+  </div>
+</aside>
       </main>
     </div>
   );
