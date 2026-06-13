@@ -44,3 +44,9 @@ Features:
 - Disaster state management
 - Event logging
 - Metrics generation
+
+# Hardware ESP32 GPO PINS CONNECTIONS to LEDs
+GPIO18 = GREEN_STATUS
+GPIO19 = YELLOW_DISASTER
+GPIO21 = RED_CRITICAL
+GPIO22 = BLUE_CONNECTED
