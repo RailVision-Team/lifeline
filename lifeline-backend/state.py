@@ -1,5 +1,6 @@
 # Global state variables to track disaster response status
 # These are stored in memory and shared across all function calls
+from datetime import datetime
 
 disaster_active = False
 blocked_roads = []
@@ -46,7 +47,8 @@ def add_event(message: str) -> None:
     Args:
         message: String describing the event
     """
-    event_log.append(message)
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    event_log.append(f"[{timestamp}] {message}")
 
 
 def get_state() -> dict:

@@ -5,6 +5,8 @@ from state import get_state, activate_disaster, add_blocked_road, add_event, cle
 from graph import get_graph
 from route_engine import calculate_routes
 from allocation_engine import calculate_priorities
+from decision_engine import generate_agent_decisions
+from metrics_engine import calculate_metrics
 
 app = FastAPI()
 
@@ -102,6 +104,14 @@ def trigger_disaster(disaster_type: str = "flood") -> dict:
     
     # Calculate alternative routes avoiding blocked roads
     routes = calculate_routes(blocked_roads_list)
+    priorities = calculate_priorities()
+
+    decisions = generate_agent_decisions(priorities)
+
+    for decision in decisions:
+        add_event(
+            f"[AUTO-AGENT] {decision['agent']} -> {decision['action']}"
+        )
     
     # Add agent-style event log messages describing route decisions
     # Each agent reports their status and actions
@@ -135,12 +145,19 @@ def trigger_disaster(disaster_type: str = "flood") -> dict:
     
     # Return current state with routes and disaster type included
     state = get_state()
+    metrics = calculate_metrics(
+        get_state(),
+        routes,
+        decisions
+    )
     return {
         "disaster_active": state["disaster_active"],
         "disaster_type": disaster_type,
         "blocked_roads": state["blocked_roads"],
         "agents": get_agents(),
         "routes": routes,
+        "decisions": decisions,
+        "metrics": metrics,
         "event_log": state["event_log"]
     }
 
@@ -220,4 +237,14 @@ def get_simulation_status() -> dict:
         "event_log": state["event_log"],
         "priorities": priorities,
         "metrics": metrics
+    }
+
+@app.post("/hardware/alert")
+def hardware_alert(message: str = "FLOOD WARNING"):
+
+    add_event(f"[HARDWARE] Speaker Alert Broadcasted: {message}")
+
+    return {
+        "status": "alert_sent",
+        "message": message
     }
