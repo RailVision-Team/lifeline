@@ -5,6 +5,7 @@ from state import get_state, activate_disaster, add_blocked_road, add_event, cle
 from graph import get_graph
 from route_engine import calculate_routes
 from allocation_engine import calculate_priorities
+from decision_engine import generate_agent_decisions
 
 app = FastAPI()
 
@@ -102,6 +103,14 @@ def trigger_disaster(disaster_type: str = "flood") -> dict:
     
     # Calculate alternative routes avoiding blocked roads
     routes = calculate_routes(blocked_roads_list)
+    priorities = calculate_priorities()
+
+    decisions = generate_agent_decisions(priorities)
+
+    for decision in decisions:
+        add_event(
+            f"[AUTO-AGENT] {decision['agent']} -> {decision['action']}"
+        )
     
     # Add agent-style event log messages describing route decisions
     # Each agent reports their status and actions
@@ -141,6 +150,7 @@ def trigger_disaster(disaster_type: str = "flood") -> dict:
         "blocked_roads": state["blocked_roads"],
         "agents": get_agents(),
         "routes": routes,
+        "decisions": decisions,
         "event_log": state["event_log"]
     }
 
