@@ -7,6 +7,7 @@ import EventLog from '@/components/EventLog';
 import CrisisControls from '@/components/CrisisControls';
 import HardwareStatus from '@/components/HardwareStatus';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 
 function Clock() {
   const [time, setTime] = useState('');
@@ -24,6 +25,13 @@ function Clock() {
 
 export default function Dashboard() {
   const { state, loading, usingMock, triggerDisaster } = useLifelineState(3000);
+  const [activeDisaster, setActiveDisaster] = useState('');
+
+const handleTrigger = (type: string) => {
+  if (type === 'reset') setActiveDisaster('');
+  else setActiveDisaster(type);
+  triggerDisaster(type);
+};
 
   return (
     <div style={{
@@ -39,6 +47,41 @@ export default function Dashboard() {
         borderBottom: '1px solid var(--bg-panel-border)',
         background: 'rgba(13,17,23,0.97)', gap: '1rem',
       }}>
+        {activeDisaster && activeDisaster !== 'reset' && (
+  <motion.div
+    initial={{ opacity: 0, y: -20 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -20 }}
+    style={{
+      background: activeDisaster === 'bridge' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)',
+      borderBottom: `1px solid ${activeDisaster === 'bridge' ? '#ef444440' : '#f59e0b40'}`,
+      padding: '0.4rem 1rem',
+      display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0,
+    }}
+  >
+    <motion.div
+      animate={{ opacity: [1, 0.2, 1] }}
+      transition={{ duration: 0.8, repeat: Infinity }}
+      style={{
+        width: 8, height: 8, borderRadius: '50%',
+        background: activeDisaster === 'bridge' ? '#ef4444' : '#f59e0b',
+        boxShadow: `0 0 8px ${activeDisaster === 'bridge' ? '#ef4444' : '#f59e0b'}`,
+      }}
+    />
+    <span style={{
+      fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em',
+      color: activeDisaster === 'bridge' ? '#ef4444' : '#f59e0b',
+    }}>
+      ⚠ ACTIVE DISASTER —{' '}
+      {activeDisaster === 'flood' ? 'FLOOD: WATER INGRESS DETECTED'
+        : activeDisaster === 'bridge' ? 'BRIDGE COLLAPSE: TRANSPORT CORRIDOR DISRUPTED'
+        : 'SUPPLY CHAIN FAILURE: INVENTORY SHORTAGE'}
+    </span>
+    <span style={{ marginLeft: 'auto', fontSize: '0.6rem', color: 'var(--text-secondary)' }}>
+      Autonomous agents responding...
+    </span>
+  </motion.div>
+)}
 
         {/* Title */}
         <div style={{ flexShrink: 0 }}>
@@ -142,13 +185,13 @@ export default function Dashboard() {
 
   {/* Hardware — fixed height, never grows */}
   <div style={{ height: '160px', flexShrink: 0, borderBottom: '1px solid var(--bg-panel-border)', overflow: 'hidden' }}>
-    <HardwareStatus connected={state.hardwareConnected} />
+    <HardwareStatus connected={state.hardwareConnected} disasterType={activeDisaster} />
   </div>
 
   {/* Crisis controls — fixed height */}
-  <div style={{ height: '200px', flexShrink: 0, overflow: 'hidden' }}>
-    <CrisisControls onTrigger={triggerDisaster} loading={loading} />
-  </div>
+  <div style={{ flexShrink: 0, overflowY: 'auto' }}>
+  <CrisisControls onTrigger={handleTrigger} loading={loading} activeDisaster={activeDisaster} />
+</div>
 </aside>
       </main>
     </div>

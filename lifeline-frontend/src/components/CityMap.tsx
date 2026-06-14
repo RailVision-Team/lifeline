@@ -5,14 +5,24 @@ import { CityNode, CityEdge } from '@/types';
 
 // Positions matched to the actual city-map.png image
 const nodePositions: Record<string, { x: number; y: number }> = {
-  'hospital':        { x: 22, y: 20 },
-  'wh-a':            { x: 22, y: 32 },
-  'wh-b':            { x: 78, y: 20 },
-  'camp-a':          { x: 52, y: 16 },
-  'camp-b':          { x: 90, y: 38 },
-  'cmd':             { x: 46, y: 52 },
-  'depot-a':         { x: 33, y: 56 },
-  'depot-b':         { x: 60, y: 56 },
+  // Frontend IDs
+  'cmd':       { x: 48, y: 52 },
+  'wh-a':      { x: 22, y: 32 },
+  'wh-b':      { x: 78, y: 20 },
+  'camp-a':    { x: 52, y: 16 },
+  'camp-b':    { x: 72, y: 52 },
+  'hospital':  { x: 22, y: 20 },
+  'depot-a':   { x: 33, y: 56 },
+  'depot-b':   { x: 60, y: 56 },
+  // Backend IDs
+  'camp1':          { x: 52, y: 16 },
+  'camp2':          { x: 72, y: 52 },
+  'warehouse1':     { x: 22, y: 32 },
+  'warehouse2':     { x: 78, y: 20 },
+  'hospital1':      { x: 22, y: 20 },
+  'depot1':         { x: 33, y: 56 },
+  'depot2':         { x: 60, y: 56 },
+  'command_center': { x: 48, y: 52 },
 };
 
 // Extra static nodes from the full map image
