@@ -181,35 +181,50 @@ export default function CityMap({ nodes, edges }: Props) {
       {/* Slight dark overlay */}
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.12)' }} />
 
-      {/* SVG edges */}
-      <svg
-        style={{
-          position: 'absolute', inset: 0,
-          width: '100%', height: '100%',
-          pointerEvents: 'none',
-        }}
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-      >
-        {edges.map(edge => {
-          const src = posMap[edge.source];
-          const tgt = posMap[edge.target];
-          if (!src || !tgt) return null;
-          const color = edgeColors[edge.status] ?? '#22c55e';
-          return (
-            <line
-              key={edge.id}
-              x1={src.x} y1={src.y}
-              x2={tgt.x} y2={tgt.y}
-              stroke={color}
-              strokeWidth="0.8"
-              strokeDasharray={edge.status === 'alternative' ? '3 1.5' : undefined}
-              strokeLinecap="round"
-              opacity={0.85}
-            />
-          );
-        })}
-      </svg>
+      {/* SVG edges — only key logistics routes */}
+<svg
+  style={{
+    position: 'absolute', inset: 0,
+    width: '100%', height: '100%',
+    pointerEvents: 'none',
+  }}
+  viewBox="0 0 100 100"
+  preserveAspectRatio="none"
+>
+  {edges
+    .filter(edge => {
+      // Only show the most important supply routes, skip redundant crossing ones
+      const skipPairs = [
+        'camp1-warehouse1', 'warehouse1-camp1',
+        'camp2-depot2', 'depot2-camp2',
+        'warehouse1-warehouse2', 'warehouse2-warehouse1',
+        'hospital1-depot1', 'depot1-hospital1',
+        'hospital1-depot2', 'depot2-hospital1',
+      ];
+      const edgeKey = `${edge.source}-${edge.target}`;
+      return !skipPairs.includes(edgeKey);
+    })
+    .map(edge => {
+      const src = posMap[edge.source];
+      const tgt = posMap[edge.target];
+      if (!src || !tgt) return null;
+      const color = edgeColors[edge.status] ?? '#22c55e';
+      return (
+        <line
+          key={edge.id}
+          x1={src.x} y1={src.y}
+          x2={tgt.x} y2={tgt.y}
+          stroke={color}
+          strokeWidth="0.7"
+          strokeDasharray={edge.status === 'alternative' ? '3 1.5'
+            : edge.status === 'blocked' ? '1 1'
+            : undefined}
+          strokeLinecap="round"
+          opacity={edge.status === 'blocked' ? 0.5 : 0.8}
+        />
+      );
+    })}
+</svg>
 
       {/* Dynamic nodes from state */}
       {nodes.map(node => {

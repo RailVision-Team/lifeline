@@ -79,21 +79,27 @@ function mapBackendToFrontend(data: any): LifelineState {
   });
 
   // Map events from event_log strings
-  const events: LogEvent[] = (data.event_log ?? []).map((msg: string, i: number) => {
-    const severity = msg.includes('blocked') || msg.includes('Disaster') ? 'critical'
-      : msg.includes('AGENT') || msg.includes('rerouted') || msg.includes('alternate') ? 'warning'
-      : 'info';
-    // Extract timestamp from [HH:MM:SS] format
-    const timeMatch = msg.match(/\[(\d{2}:\d{2}:\d{2})\]/);
-    const timestamp = timeMatch ? timeMatch[1] : '00:00:00';
-    const message = msg.replace(/\[\d{2}:\d{2}:\d{2}\]\s*/, '');
-    return {
-      id: `ev-${i}-${Date.now()}`,
-      timestamp,
-      message,
-      severity,
-    };
-  }).reverse(); // newest first
+const rawEvents = data.event_log ?? [];
+
+const defaultEvents: LogEvent[] = [
+  { id: 'sys-1', timestamp: new Date().toLocaleTimeString(), message: 'System operational. All agents on standby.', severity: 'info' },
+  { id: 'sys-2', timestamp: new Date().toLocaleTimeString(), message: `Monitoring ${(data.graph?.nodes ?? []).length} network nodes.`, severity: 'info' },
+  { id: 'sys-3', timestamp: new Date().toLocaleTimeString(), message: `${(data.agents ?? []).length} autonomous agents active and ready.`, severity: 'info' },
+  { id: 'sys-4', timestamp: new Date().toLocaleTimeString(), message: 'Route optimization engine running.', severity: 'info' },
+];
+
+const events: LogEvent[] = rawEvents.length > 0
+  ? rawEvents.map((msg: string, i: number) => {
+      const severity: LogEvent['severity'] =
+        msg.includes('blocked') || msg.includes('Disaster') ? 'critical'
+        : msg.includes('AGENT') || msg.includes('AUTO') ? 'warning'
+        : 'info';
+      const timeMatch = msg.match(/\[(\d{2}:\d{2}:\d{2})\]/);
+      const timestamp = timeMatch ? timeMatch[1] : new Date().toLocaleTimeString();
+      const message = msg.replace(/\[\d{2}:\d{2}:\d{2}\]\s*/, '').trim();
+      return { id: `ev-${i}`, timestamp, message, severity };
+    }).reverse()
+  : defaultEvents;
 
   // Map metrics
   const metrics = {
